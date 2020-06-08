@@ -5,8 +5,10 @@
  */
 package org.boniardi.testpgp;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
@@ -14,7 +16,6 @@ import java.security.NoSuchProviderException;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Iterator;
-import java.util.Random;
 import name.neuhalfen.projects.crypto.bouncycastle.openpgp.BouncyGPG;
 import name.neuhalfen.projects.crypto.bouncycastle.openpgp.keys.callbacks.KeyringConfigCallbacks;
 import name.neuhalfen.projects.crypto.bouncycastle.openpgp.keys.keyrings.InMemoryKeyring;
@@ -22,6 +23,7 @@ import name.neuhalfen.projects.crypto.bouncycastle.openpgp.keys.keyrings.Keyring
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.util.io.Streams;
 
 /**
  *
@@ -34,12 +36,8 @@ public class PGPmanager {
 
     PGPmanager() {
         try {
-            //create a pwd to protect keyring
-            byte[] array = new byte[7]; // length is bounded by 7
-            new Random().nextBytes(array);
-            internalPassPhrase = new String(array, Charset.forName("UTF-8"));
-            //create keyring
-            keyring = createKeyringInMemory(internalPassPhrase);
+            // you can pass the pwd to protect the private Key
+            keyring = createKeyringInMemory(null);
             //load keys from ... configuration
             loadKeys();
         } catch (Exception e) {
@@ -186,6 +184,45 @@ public class PGPmanager {
             e.printStackTrace();
         }
         return recipient;
+    }
+
+    /**
+     * On receiving
+     *
+     * To decrypt response body, to see the response payload
+     *
+     * The PGP works as follows: Decrypts the key (to open the payload) using
+     * recipient's private key. It's possible because the key was encrypted
+     * using the recipient's public key. Then, using that key, decrypts the
+     * payload. Then, using the sender's signature, verifies if the payload is
+     * really from the sender.
+     *
+     * @param cipherText, the PGP message to be decrypted
+     * @param pubKeyRing, recipient's public key ring, containing also the
+     * sender's public key
+     * @param privKeyRing, recipient's private key ring
+     * @param privKeyPwd, recipient's private key password
+     * @param sender, corresponds with user id in sender's key
+     *
+     * @return the original text, must be set with UTF-8
+     */
+    String decrypt(String cipherText)
+            throws IOException, PGPException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
+        installBCProvider();
+
+        //KeyringConfig keyringConfig = KeyringConfigs.withKeyRingsFromFiles(pubKeyRing,
+        //        privKeyRing, KeyringConfigCallbacks.withPassword(privKeyPwd));
+        ByteArrayInputStream cipherStream = new ByteArrayInputStream(cipherText.getBytes());
+        
+        InputStream decryptedStream = BouncyGPG
+                .decryptAndVerifyStream()
+                .withConfig(keyring)
+                .andIgnoreSignatures()
+                .fromEncryptedInputStream(cipherStream);
+
+        byte[] decryptedBytes = Streams.readAll(decryptedStream);
+
+        return new String(decryptedBytes, Charset.forName("UTF-8"));
     }
 
 }
