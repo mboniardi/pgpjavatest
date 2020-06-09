@@ -34,6 +34,9 @@ public class PGPmanager {
     private String internalPassPhrase = "";
     private InMemoryKeyring keyring = null;
 
+    /**
+     * All init procedure inside creator
+     */
     PGPmanager() {
         try {
             // you can pass the pwd to protect the private Key
@@ -94,6 +97,45 @@ public class PGPmanager {
         return new String(cipherBytes, Charset.forName("UTF-8"));
     }
 
+        /**
+     * On receiving
+     *
+     * To decrypt response body, to see the response payload
+     *
+     * The PGP works as follows: Decrypts the key (to open the payload) using
+     * recipient's private key. It's possible because the key was encrypted
+     * using the recipient's public key. Then, using that key, decrypts the
+     * payload. Then, using the sender's signature, verifies if the payload is
+     * really from the sender.
+     *
+     * @param cipherText, the PGP message to be decrypted
+     * @param pubKeyRing, recipient's public key ring, containing also the
+     * sender's public key
+     * @param privKeyRing, recipient's private key ring
+     * @param privKeyPwd, recipient's private key password
+     * @param sender, corresponds with user id in sender's key
+     *
+     * @return the original text, must be set with UTF-8
+     */
+    String decrypt(String cipherText)
+            throws IOException, PGPException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
+        installBCProvider();
+
+        //KeyringConfig keyringConfig = KeyringConfigs.withKeyRingsFromFiles(pubKeyRing,
+        //        privKeyRing, KeyringConfigCallbacks.withPassword(privKeyPwd));
+        ByteArrayInputStream cipherStream = new ByteArrayInputStream(cipherText.getBytes());
+        
+        InputStream decryptedStream = BouncyGPG
+                .decryptAndVerifyStream()
+                .withConfig(keyring)
+                .andIgnoreSignatures()
+                .fromEncryptedInputStream(cipherStream);
+
+        byte[] decryptedBytes = Streams.readAll(decryptedStream);
+
+        return new String(decryptedBytes, Charset.forName("UTF-8"));
+    }
+    
     private void loadKeys() throws Exception {
         // to rewrite with upload from Configutation
         String pubkeyString = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n"
@@ -184,45 +226,6 @@ public class PGPmanager {
             e.printStackTrace();
         }
         return recipient;
-    }
-
-    /**
-     * On receiving
-     *
-     * To decrypt response body, to see the response payload
-     *
-     * The PGP works as follows: Decrypts the key (to open the payload) using
-     * recipient's private key. It's possible because the key was encrypted
-     * using the recipient's public key. Then, using that key, decrypts the
-     * payload. Then, using the sender's signature, verifies if the payload is
-     * really from the sender.
-     *
-     * @param cipherText, the PGP message to be decrypted
-     * @param pubKeyRing, recipient's public key ring, containing also the
-     * sender's public key
-     * @param privKeyRing, recipient's private key ring
-     * @param privKeyPwd, recipient's private key password
-     * @param sender, corresponds with user id in sender's key
-     *
-     * @return the original text, must be set with UTF-8
-     */
-    String decrypt(String cipherText)
-            throws IOException, PGPException, NoSuchAlgorithmException, NoSuchProviderException, SignatureException {
-        installBCProvider();
-
-        //KeyringConfig keyringConfig = KeyringConfigs.withKeyRingsFromFiles(pubKeyRing,
-        //        privKeyRing, KeyringConfigCallbacks.withPassword(privKeyPwd));
-        ByteArrayInputStream cipherStream = new ByteArrayInputStream(cipherText.getBytes());
-        
-        InputStream decryptedStream = BouncyGPG
-                .decryptAndVerifyStream()
-                .withConfig(keyring)
-                .andIgnoreSignatures()
-                .fromEncryptedInputStream(cipherStream);
-
-        byte[] decryptedBytes = Streams.readAll(decryptedStream);
-
-        return new String(decryptedBytes, Charset.forName("UTF-8"));
     }
 
 }
