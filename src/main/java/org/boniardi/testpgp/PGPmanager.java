@@ -43,7 +43,7 @@ public class PGPmanager {
     PGPmanager() {
         try {
             // you can pass the pwd to protect the private Key
-            keyring = createKeyringInMemory(null);
+            keyring = createKeyringInMemory("Viaggiare99");
             //load keys from ... configuration
             loadKeys();
         } catch (Exception e) {
@@ -89,7 +89,7 @@ public class PGPmanager {
                 .encryptToStream()
                 .withConfig(keyring)
                 .withStrongAlgorithms()
-                .toRecipient(recipient)
+                .toRecipients(recipient)
                 .andDoNotSign()
                 .armorAsciiOutput()
                 .andWriteTo(cipherStream);
@@ -139,7 +139,8 @@ public class PGPmanager {
 
         return new String(decryptedBytes, Charset.forName("UTF-8"));
     }
-
+    
+    
     private void loadKeys() throws Exception {
         // to rewrite with upload from Configutation
         String email = "test@test.org";
@@ -417,5 +418,22 @@ public class PGPmanager {
             throw new Exception("Keyring not initialized");
         }
         return userID;
+    }
+
+    private PGPSecretKeyRing getPrivateKeyring(String email) throws Exception{
+        PGPSecretKeyRing result = null;
+        for (PGPSecretKeyRing keyR : keyring.getSecretKeyRings()) {
+            for (Iterator i = keyR.getSecretKeys(); i.hasNext();) {
+                PGPSecretKey psk = (PGPSecretKey) i.next();
+                for (Iterator k = psk.getUserIDs(); k.hasNext();) {
+                    String uid = (String) k.next();
+                    if (uid.contains(email)) {
+                        result = keyR;
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
     }
 }

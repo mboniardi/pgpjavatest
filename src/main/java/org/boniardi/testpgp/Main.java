@@ -25,9 +25,9 @@ public class Main {
             PGPmanager pgpMng = new PGPmanager();
             // this is the action available
             String encrString = pgpMng.encrypt("test@test.org",textToEncrypt);
-            //String decrString = pgpMng.decrypt(encrString);
             System.out.println(encrString);
-            //System.out.println(decrString);
+            String decrString = pgpMng.decrypt(encrString);
+            System.out.println(decrString);
         } catch (Exception e) {
             e.printStackTrace();
         }
