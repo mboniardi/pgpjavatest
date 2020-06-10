@@ -27,6 +27,7 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 
 /**
  *
@@ -345,6 +346,11 @@ public class PGPmanager {
      * @throws Exception
      */
     private void addPublicKey(String email, String keyString) throws Exception {
+        InputStream raw = new ByteArrayInputStream(keyString.getBytes());
+        InputStream decoded = org.bouncycastle.openpgp.PGPUtil.getDecoderStream(raw);
+        PGPPublicKeyRing pgpPub = new PGPPublicKeyRing(decoded,  new BcKeyFingerprintCalculator());
+        Long KeyID = pgpPub.getPublicKey().getKeyID();
+        
         if (keyring != null) {
             keyring.addPublicKey(keyString.getBytes());
             int counter = 0;
