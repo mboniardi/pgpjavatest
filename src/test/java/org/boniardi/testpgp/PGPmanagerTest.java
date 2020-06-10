@@ -37,6 +37,45 @@ public class PGPmanagerTest {
     public void tearDown() {
     }
 
+    /**
+     * Test of encrypt method, of class PGPmanager.
+     */
+    @Test
+    public void testEncrypt_String_String() throws Exception {
+        System.out.println("decrypt");
+        String toBeEncrypted = "this is the etxt to encrypt";
+        PGPmanager instance = new PGPmanager();
+        String cipherText = instance.encrypt("test@test.org", toBeEncrypted);
+        String result = instance.decrypt(cipherText);
+        assertEquals(toBeEncrypted, result);
+    }
+
+    /**
+     * Test of encrypt method, of class PGPmanager.
+     */
+    @Test
+    public void testEncrypt_String_byteArr() throws Exception {
+        System.out.println("decrypt");
+        String toBeEncrypted = "this is the etxt to encrypt";
+        PGPmanager instance = new PGPmanager();
+        String cipherText = instance.encrypt("test@test.org", toBeEncrypted.getBytes());
+        String result = instance.decrypt(cipherText);
+        assertEquals(toBeEncrypted, result);
+    }
+
+    /**
+     * Test of decrypt method, of class PGPmanager.
+     */
+    @Test
+    public void testDecrypt() throws Exception {
+        System.out.println("decrypt");
+        String toBeEncrypted = "this is the etxt to encrypt";
+        PGPmanager instance = new PGPmanager();
+        String cipherText = instance.encrypt("test@test.org", toBeEncrypted);
+        String result = instance.decrypt(cipherText);
+        assertEquals(toBeEncrypted, result);
+    }
+
 
     
 }
